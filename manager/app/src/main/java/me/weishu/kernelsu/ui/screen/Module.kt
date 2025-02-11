@@ -103,6 +103,7 @@ import me.weishu.kernelsu.ui.util.hasMagisk
 import me.weishu.kernelsu.ui.util.reboot
 import me.weishu.kernelsu.ui.util.toggleModule
 import me.weishu.kernelsu.ui.util.uninstallModule
+import me.weishu.kernelsu.ui.util.Uri.getFileName
 import me.weishu.kernelsu.ui.viewmodel.ModuleViewModel
 import me.weishu.kernelsu.ui.webui.WebUIActivity
 import okhttp3.OkHttpClient
@@ -211,7 +212,7 @@ fun ModuleScreen(navigator: DestinationsNavigator) {
                     if (it.resultCode != RESULT_OK) {
                         return@rememberLauncherForActivityResult
                     }
-                    val data = result.data ?: return@rememberLauncherForActivityResult
+                    val data = it.data ?: return@rememberLauncherForActivityResult
                     val clipData = data.clipData
 
                     val uris = mutableListOf<Uri>()
