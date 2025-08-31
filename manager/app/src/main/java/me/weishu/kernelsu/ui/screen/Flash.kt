@@ -53,6 +53,8 @@ import kotlinx.coroutines.withContext
 import kotlinx.parcelize.Parcelize
 import me.weishu.kernelsu.R
 import me.weishu.kernelsu.ui.component.KeyEventBlocker
+import me.weishu.kernelsu.ui.component.ConfirmResult
+import me.weishu.kernelsu.ui.component.rememberConfirmDialog
 import me.weishu.kernelsu.ui.util.FlashResult
 import me.weishu.kernelsu.ui.util.LkmSelection
 import me.weishu.kernelsu.ui.util.flashModule
@@ -121,14 +123,48 @@ fun FlashScreen(
         mutableStateOf(FlashingStatus.FLASHING)
     }
 
-    LaunchedEffect(Unit) {
-        if (text.isNotEmpty()) {
-            return@LaunchedEffect
+    val confirmDialog = rememberConfirmDialog()
+    var confirmed by rememberSaveable { mutableStateOf(flashIt !is FlashIt.FlashModules) }
+    var pendingFlashIt by rememberSaveable { mutableStateOf<FlashIt?>(null) }
+
+    // ask for confirmation if needed
+    LaunchedEffect(flashIt) {
+        if (flashIt is FlashIt.FlashModules && !confirmed) {
+            val uris = flashIt.uris
+            val moduleNames = uris.mapIndexed { index, uri ->
+                "\n${index + 1}. ${uri.getFileName(context)}"
+            }.joinToString("")
+    
+            val confirmContent = context.getString(
+                R.string.module_install_prompt_with_name,
+                moduleNames
+            )
+            val confirmTitle = context.getString(R.string.module)
+    
+            val result = confirmDialog.awaitConfirm(
+                title = confirmTitle,
+                content = confirmContent,
+                markdown = true
+            )
+            if (result == ConfirmResult.Confirmed) {
+                confirmed = true
+                pendingFlashIt = flashIt
+            } else {
+                navigator.popBackStack()
+            }
+        } else {
+            confirmed = true
+            pendingFlashIt = flashIt
         }
+    }
+
+    // start flashing once confirmed
+    LaunchedEffect(confirmed, pendingFlashIt) {
+        if (!confirmed || pendingFlashIt == null || text.isNotEmpty()) return@LaunchedEffect
         withContext(Dispatchers.IO) {
-            flashIt(flashIt, onStdout = {
+            flashIt(pendingFlashIt!!, onStdout = {
                 tempText = "$it\n"
-                if (tempText.startsWith("[H[J")) { // clear command
+                if (tempText.startsWith("[H[J")) {
                     text = tempText.substring(6)
                 } else {
                     text += tempText
@@ -234,6 +270,20 @@ fun FlashScreen(
             )
         }
     }
+}
+
+
+fun Uri.getFileName(context: android.content.Context): String {
+    val contentResolver = context.contentResolver
+    val cursor = contentResolver.query(this, null, null, null, null)
+    return cursor?.use {
+        val nameIndex = it.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+        if (it.moveToFirst() && nameIndex != -1) {
+            it.getString(nameIndex)
+        } else {
+            this.lastPathSegment ?: "unknown.zip"
+        }
+    } ?: (this.lastPathSegment ?: "unknown.zip")
 }
 
 @Parcelize

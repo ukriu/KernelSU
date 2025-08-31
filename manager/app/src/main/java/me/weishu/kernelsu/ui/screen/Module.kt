@@ -404,50 +404,30 @@ fun ModulePager(
         floatingActionButton = {
             if (!hideInstallButton) {
                 val moduleInstall = stringResource(id = R.string.module_install)
-                val confirmTitle = stringResource(R.string.module)
-                var zipUris by remember { mutableStateOf<List<Uri>>(emptyList()) }
-                val confirmDialog = rememberConfirmDialog(
-                    onConfirm = {
-                        navigator.navigate(FlashScreenDestination(FlashIt.FlashModules(zipUris))) {
-                            launchSingleTop = true
-                        }
-                        viewModel.markNeedRefresh()
-                    }
-                )
                 val selectZipLauncher = rememberLauncherForActivityResult(
-                    contract = ActivityResultContracts.StartActivityForResult()
-                ) {
-                    if (it.resultCode != RESULT_OK) {
-                        return@rememberLauncherForActivityResult
-                    }
-                    val data = it.data ?: return@rememberLauncherForActivityResult
-                    val clipData = data.clipData
-
-                    val uris = mutableListOf<Uri>()
-                    if (clipData != null) {
-                        for (i in 0 until clipData.itemCount) {
-                            clipData.getItemAt(i)?.uri?.let { it -> uris.add(it) }
-                        }
-                    } else {
-                        data.data?.let { it -> uris.add(it) }
-                    }
-
-                    if (uris.size == 1) {
-                        navigator.navigate(FlashScreenDestination(FlashIt.FlashModules(listOf(uris.first())))) {
-                            launchSingleTop = true
-                        }
-                    } else if (uris.size > 1) {
-                        // multiple files selected
-                        val moduleNames =
-                            uris.mapIndexed { index, uri -> "\n${index + 1}. ${uri.getFileName(context)}" }.joinToString("")
-                        val confirmContent = context.getString(R.string.module_install_prompt_with_name, moduleNames)
-                        zipUris = uris
-                        confirmDialog.showConfirm(
-                            title = confirmTitle,
-                            content = confirmContent
-                        )
-                    }
-                }
+                  contract = ActivityResultContracts.StartActivityForResult()
+              ) {
+                  if (it.resultCode != RESULT_OK) {
+                      return@rememberLauncherForActivityResult
+                  }
+                  val data = it.data ?: return@rememberLauncherForActivityResult
+                  val clipData = data.clipData
+              
+                  val uris = mutableListOf<Uri>()
+                  if (clipData != null) {
+                      for (i in 0 until clipData.itemCount) {
+                          clipData.getItemAt(i)?.uri?.let { uri -> uris.add(uri) }
+                      }
+                  } else {
+                      data.data?.let { uri -> uris.add(uri) }
+                  }
+              
+                  if (uris.isNotEmpty()) {
+                      navigator.navigate(FlashScreenDestination(FlashIt.FlashModules(uris))) {
+                          launchSingleTop = true
+                      }
+                  }
+              }
                 FloatingActionButton(
                     modifier = Modifier
                         .offset(y = offsetHeight)

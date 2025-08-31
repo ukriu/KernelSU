@@ -2,6 +2,8 @@ package me.weishu.kernelsu.ui
 
 import android.os.Build
 import android.os.Bundle
+import android.net.Uri
+import android.content.Intent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
@@ -22,6 +24,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.compose.rememberNavController
@@ -31,6 +34,7 @@ import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootGraph
 import com.ramcosta.composedestinations.generated.NavGraphs
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import com.ramcosta.composedestinations.generated.destinations.FlashScreenDestination
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.HazeTint
@@ -42,6 +46,7 @@ import me.weishu.kernelsu.ui.component.BottomBar
 import me.weishu.kernelsu.ui.screen.HomePager
 import me.weishu.kernelsu.ui.screen.ModulePager
 import me.weishu.kernelsu.ui.screen.SuperUserPager
+import me.weishu.kernelsu.ui.screen.FlashIt
 import me.weishu.kernelsu.ui.theme.KernelSUTheme
 import me.weishu.kernelsu.ui.util.install
 import top.yukonga.miuix.kmp.basic.Scaffold
@@ -62,9 +67,33 @@ class MainActivity : ComponentActivity() {
         val isManager = Natives.becomeManager(ksuApp.packageName)
         if (isManager) install()
 
+        // check if launchef with a zip files
+        val zipUris: List<Uri> = when (intent?.action) {
+            Intent.ACTION_VIEW, Intent.ACTION_SEND -> {
+                listOfNotNull(intent.data ?: intent.getParcelableExtra(Intent.EXTRA_STREAM))
+            }
+            Intent.ACTION_SEND_MULTIPLE -> {
+                intent.getParcelableArrayListExtra<Uri>(Intent.EXTRA_STREAM) ?: emptyList()
+            }
+            else -> emptyList()
+        }.filter { uri ->
+            val type = contentResolver.getType(uri)
+            type.equals("application/zip", ignoreCase = true) ||
+            type.equals("application/x-zip-compressed", ignoreCase = true) ||
+            uri.toString().endsWith(".zip", ignoreCase = true)
+        }
+
         setContent {
             KernelSUTheme {
                 val navController = rememberNavController()
+
+                LaunchedEffect(zipUris) {
+                    if (zipUris.isNotEmpty()) {
+                        navController.navigate(
+                            FlashScreenDestination(FlashIt.FlashModules(zipUris))
+                        )
+                    }
+                }
 
                 Scaffold { innerPadding ->
                     DestinationsNavHost(
