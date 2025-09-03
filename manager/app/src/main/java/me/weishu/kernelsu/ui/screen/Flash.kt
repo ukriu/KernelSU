@@ -105,7 +105,7 @@ fun flashModulesSequentially(
 }
 
 @Composable
-@Destination<RootGraph>(navArgsDelegate = FlashIt::class)
+@Destination<RootGraph>
 fun FlashScreen(
     navigator: DestinationsNavigator,
     flashIt: FlashIt
