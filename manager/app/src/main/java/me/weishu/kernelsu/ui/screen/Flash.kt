@@ -105,7 +105,7 @@ fun flashModulesSequentially(
 }
 
 @Composable
-@Destination<RootGraph>
+@Destination<RootGraph>(navArgsDelegate = FlashIt::class)
 fun FlashScreen(
     navigator: DestinationsNavigator,
     flashIt: FlashIt
@@ -237,8 +237,8 @@ fun FlashScreen(
     }
 }
 
+@Parcelize
 sealed class FlashIt : Parcelable {
-
     @Parcelize
     data class FlashBoot(
         val boot: Uri? = null,
