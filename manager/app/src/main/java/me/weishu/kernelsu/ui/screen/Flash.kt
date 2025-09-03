@@ -51,6 +51,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.parcelize.Parcelize
+import kotlinx.parcelize.RawValue
 import me.weishu.kernelsu.R
 import me.weishu.kernelsu.ui.component.KeyEventBlocker
 import me.weishu.kernelsu.ui.util.FlashResult
@@ -236,15 +237,24 @@ fun FlashScreen(
     }
 }
 
-@Parcelize
 sealed class FlashIt : Parcelable {
-    data class FlashBoot(val boot: Uri? = null, val lkm: LkmSelection, val ota: Boolean) :
-        FlashIt()
 
-    data class FlashModules(val uris: List<Uri>) : FlashIt()
+    @Parcelize
+    data class FlashBoot(
+        val boot: Uri? = null,
+        val lkm: LkmSelection,
+        val ota: Boolean
+    ) : FlashIt()
 
+    @Parcelize
+    data class FlashModules(
+        val uris: List<@RawValue Uri>
+    ) : FlashIt()
+
+    @Parcelize
     data object FlashRestore : FlashIt()
 
+    @Parcelize
     data object FlashUninstall : FlashIt()
 }
 

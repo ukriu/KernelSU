@@ -91,8 +91,8 @@ class MainActivity : ComponentActivity() {
                 if (zipUris.isNotEmpty()) {
                     LaunchedEffect(Unit) {
                         navController.navigate(
-                            FlashScreenDestination(FlashIt.FlashModules(zipUris))
-                        )
+                          FlashScreenDestination(FlashIt.FlashModules(zipUris))
+                      )
                     }
                 }
 
